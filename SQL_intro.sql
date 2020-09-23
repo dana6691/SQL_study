@@ -1,8 +1,16 @@
+'''
+why do we need SQL?
+1) protect the data
+2) share the data with team 
+3) easy to deal with large size data
+'''
+/***********************************************************************************/
+/*********Basic SQL******/
 /*select multiple columns*/
 SELECT title, release_year, country
 FROM films;
 
-/*unique*/
+/*limit*/
 SELECT DISTINCT language
 FROM films
 LIMIT 5;
@@ -11,6 +19,327 @@ LIMIT 5;
 select count(*) from reviews; --total rows
 select count(distinct birthdate) from people; -- distinct bday
 
+/*where*/
+SELECT Major, Major_category, ShareWomen, Unemployment_rate
+FROM recent_grads
+ WHERE (Major_category = 'Engineering') 
+   AND (ShareWomen > 0.5 OR Unemployment_rate < 0.051);
+
+/*order by*/
+SELECT Major, ShareWomen, Unemployment_rate 
+ FROM recent_grads
+ WHERE ShareWomen > 0.3 
+   AND Unemployment_rate < .1
+ ORDER BY ShareWomen DESC;
+
+/*min/max/count/sum/avg/round*/
+SELECT COUNT(*) 'Number of Majors',
+       MAX(Unemployment_rate) 'Highest Unemployment Rate'
+FROM recent_grads;
+
+SELECT AVG(Total), MIN(Men), MAX(Women)
+FROM recent_grads;
+
+SELECT ROUND(ShareWomen, 4) AS Rounded_women,
+       Major_category
+  FROM new_grads
+ LIMIT 10;
+
+/*unique*/
+SELECT COUNT(DISTINCT Major ) unique_majors,
+       COUNT(DISTINCT Major_category) unique_major_categories,
+       COUNT(DISTINCT Major_code) unique_major_codes
+  FROM recent_grads;
+
+/*length of text*/
+SELECT Major,
+       Total, Men, Women, Unemployment_rate,
+       LENGTH(Major) AS Length_of_name
+  FROM recent_grads
+ ORDER BY Unemployment_rate DESC
+ LIMIT 3;
+
+ /*concatenate operator*/
+ SELECT 'Cat: ' || Major_category
+  FROM recent_grads
+ LIMIT 2;
+/*concatenate operator(2)*/
+ SELECT
+    e1.first_name || " " || e1.last_name employee_name,
+    e1.title employee_title,
+    e2.first_name || " " || e2.last_name supervisor_name,
+    e2.title supervisor_title
+FROM employee e1
+LEFT JOIN employee e2 ON e1.reports_to = e2.employee_id
+ORDER BY 1;
+
+ /*75quartile-25quartile*/
+ SELECT Major, Major_category, (P75th - P25th) quartile_spread 
+ FROM recent_grads 
+ ORDER BY quartile_spread 
+ LIMIT 20;
+
+ /*groupby*/
+ SELECT Major_category,
+       SUM(Women) AS Total_women,
+       AVG(ShareWomen) AS Mean_women,
+       SUM(Total)*AVG(ShareWomen) AS Estimate_women
+  FROM recent_grads
+ GROUP BY Major_category;
+
+ /*having*/
+ SELECT Major_category,
+       AVG(Low_wage_jobs) / AVG(Total) AS Share_low_wage
+  FROM new_grads
+ GROUP BY Major_category
+HAVING share_low_wage > .1
+ORDER BY Share_low_wage
+LIMIT 3;
+
+/*cast: change value to float(decimals)*/
+SELECT Major_category,
+       CAST(SUM(Women) as Float)/Cast(SUM(Total) as Float) AS SW
+  FROM new_grads
+ GROUP BY Major_category
+ ORDER BY SW;
+
+/*Subquries(1)*/
+SELECT CAST(COUNT(*) as FLOAT)/(SELECT COUNT(*)
+                                  FROM recent_grads
+                               ) AS proportion_abv_avg
+ FROM recent_grads
+ WHERE ShareWomen > (SELECT AVG(ShareWomen)
+                       FROM recent_grads
+                    );
+/*Subquries(2) - IN */
+SELECT Major_category, Major
+  FROM recent_grads
+ WHERE Major_category IN ('Business', 'Humanities & Liberal Arts', 'Education');
+
+ SELECT Major_category, Major
+  FROM recent_grads
+ WHERE Major_category IN (SELECT Major_category
+                            FROM recent_grads
+                           GROUP BY Major_category
+                           ORDER BY SUM(TOTAL) DESC
+                           LIMIT 3
+                         );
+/***********************************************************************************/
+/*********intermediate SQL******/
+/*inner join*/
+SELECT c.*, f.name country_name 
+FROM facts f
+INNER JOIN cities c ON c.facts_id = f.id
+LIMIT 5;
+/*left join*/
+SELECT f.name country, f.population
+FROM facts f
+LEFT JOIN cities c ON c.facts_id = f.id
+WHERE c.name IS NULL;
+/*inner join(2) with subqueries*/
+SELECT
+    f.name country,
+    c.urban_pop,
+    f.population total_pop,
+    (c.urban_pop / CAST(f.population AS FLOAT)) urban_pct
+FROM facts f
+INNER JOIN (
+            SELECT
+                facts_id,
+                SUM(population) urban_pop
+            FROM cities
+            GROUP BY 1
+           ) c ON c.facts_id = f.id
+WHERE urban_pct > .5
+ORDER BY 4 ASC;
+
+/*UNION/EXCEPT/INTERSECT*/
+SELECT * from customer_usa
+UNION
+SELECT * from customer_gt_90_dollars;
+
+SELECT * from customer_usa
+EXCEPT
+SELECT * from customer_gt_90_dollars;
+
+SELECT * from customer_usa
+INTERSECT
+SELECT * from customer_gt_90_dollars;
+
+/*multiple join*/
+SELECT
+    il.track_id,
+    t.name track_name,
+    mt.name track_type,
+    il.unit_price,
+    il.quantity
+FROM invoice_line il
+INNER JOIN track t ON t.track_id = il.track_id
+INNER JOIN media_type mt ON mt.media_type_id = t.media_type_id
+WHERE il.invoice_id = 4;
+
+/*create VIEW*/
+CREATE VIEW chinook.customer_gt_90_dollars AS 
+    SELECT
+        c.*
+    FROM chinook.invoice i
+    INNER JOIN chinook.customer c ON i.customer_id = c.customer_id
+    GROUP BY 1
+    HAVING SUM(i.total) > 90;
+SELECT * FROM chinook.customer_gt_90_dollars;
+
+/*LIKE*/
+SELECT
+    first_name,
+    last_name,
+    phone
+FROM customer
+where first_name LIKE "%belle%";
+
+/*with*/
+WITH
+    customers_india AS
+        (
+        SELECT * FROM customer
+        WHERE country = "India"
+        ),
+    sales_per_customer AS
+        (
+         SELECT
+             customer_id,
+             SUM(total) total
+         FROM invoice
+         GROUP BY 1
+        )
+
+SELECT
+    ci.first_name || " " || ci.last_name customer_name,
+    spc.total total_purchases
+FROM customers_india ci
+INNER JOIN sales_per_customer spc ON ci.customer_id = spc.customer_id
+ORDER BY 1;
+/***********************************************************************************/
+/*********SQlite******/
+/*connect, object*/
+import sqlite3
+conn = sqlite3.connect("jobs.db")
+cursor = conn.cursor()
+
+/*fetch first three tuples*/
+cursor = conn.cursor()
+query = "select major from recent_grads;"
+majors = cursor.execute(query).fetchall()
+print(majors[0:3])
+
+/*fetch the first five results*/
+cursor = conn.cursor()
+query = "select Major,Major_category from recent_grads;"
+cursor.execute(query)
+five_results = cursor.fetchmany(5)
+
+/*reverse alphabet*/
+cur = conn.cursor()
+query = "select Major from recent_grads order by Major desc;"
+reverse_alphabetical = cur.execute(query).fetchall()
+conn.close()
+/***********************************************************************************/
+/*******Shell******/
+-- Launch the SQLite shell, connecting to the chinook.db database file
+sqlite3 chinook.db
+-- display tables
+.tables
+-- allow us to select
+.mode column
+-- query
+SELECT track_id, name, album_id FROM track WHERE album_id =3;
+-- help
+.help
+-- clear
+.shell clear
+-- quit
+.quit
+/*create table*/
+sqlite3 new_database.db
+CREATE TABLE user (
+		user_id INTEGER,
+		first_name TEXT,
+		last_name TEXT);
+.schema user
+.quit
+/*primary,foreign*/
+sqlite3 chinook.db
+CREATE TABLE wishlist (
+wishlist_id INTEGER PRIMARY KEY,
+customer_id INTEGER,
+name TEXT,
+FOREIGN KEY (customer_id) REFERENCES customer(customer_id)
+);
+.quit
+/*multiple primary,foreign*/
+sqlite3 chinook.db
+CREATE TABLE wishlist_track (
+wishlist_id INTEGER,
+track_id INTEGER,
+PRIMARY KEY (wishlist_id, track_id),
+FOREIGN KEY (wishlist_id) REFERENCES wishlist(wishlist_id),
+FOREIGN KEY (track_id) REFERENCES track(track_id)
+);
+.quit
+/*Insert into*/
+sqlite3 chinook.db
+INSERT INTO wishlist
+VALUES
+(1, 34, "Joao's awesome wishlist"),
+(2, 18, "Amy loves pop");
+INSERT INTO wishlist_track
+VALUES
+(1, 1158),
+(1, 2646),
+(1, 1990),
+(2, 3272),
+(2, 3470);
+.quit
+/*Insert into(2)*/
+sqlite3 chinook.db <<EOF
+INSERT INTO wishlist
+VALUES
+    (1, 34, "Joao's awesome wishlist"),
+    (2, 18, "Amy loves pop");
+INSERT INTO wishlist_track
+VALUES
+    (1, 1158),
+    (1, 2646),
+    (1, 1990),
+    (2, 3272),
+    (2, 3470);
+EOF
+/*add column*/
+sqlite3 chinook.db <<EOF
+ALTER TABLE wishlist
+ADD COLUMN active NUMERIC;
+ALTER TABLE wishlist_track
+ADD COLUMN active NUMERIC;
+EOF
+/*wishlist, withlist_track tables*/
+/*set all values for active column to 1*/
+sqlite3 chinook.db <<EOF
+UPDATE wishlist
+SET active = 1;
+UPDATE wishlist_track
+SET active = 1;
+EOF
+/*set + add column*/
+sqlite3 chinook.db <<EOF
+ALTER TABLE invoice
+ADD COLUMN tax NUMERIC;
+ALTER TABLE invoice
+ADD COLUMN subtotal NUMERIC;
+UPDATE invoice
+SET
+    tax = 0,
+    subtotal = total;
+EOF
+/***********************************************************************************/
 /*********Intro to Relational Databases in SQL******/
 /*create table*/
 CREATE TABLE professor(
@@ -41,7 +370,7 @@ DROP TABLE university_professors;
 
 
 
-
+/***********************************************************************************/
 /******T-SQL************/
 /*aggregation*/
 SELECT Avg(DurationSeconds) AS Average, 
@@ -89,7 +418,7 @@ SELECT DurationSeconds,
        END AS SecondGroup   
 FROM Incidents 
 
-
+/***********************************************************************************/
 /******SQL Server************/
 /* 
 CONVERT(DATE, startdate): convert to Format YYYY-MM-DD
