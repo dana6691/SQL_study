@@ -15,4 +15,3 @@ Our complete COVID-19 dataset is a collection of the COVID-19 data maintained by
 | Policy responses            | Oxford COVID-19 Government Response Tracker               | Daily   | 181       |
 | Other variables of interest | International organizations (UN, World Bank, OECD, IHME…) | Fixed   | 218       | 
 
-## data source: https://ourworldindata.org/covid-deaths
