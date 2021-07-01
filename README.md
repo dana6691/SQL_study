@@ -1,6 +1,6 @@
-# SQL
+## Covid19.sql
 
-# Data on COVID-19 (coronavirus) by _Our World in Data
+### Data on COVID-19 (coronavirus) by _Our World in Data
 
 Our complete COVID-19 dataset is a collection of the COVID-19 data maintained by [_Our World in Data_](https://ourworldindata.org/coronavirus). We will update it daily throughout the duration of the COVID-19 pandemic. It includes the following data:
 
