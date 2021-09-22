@@ -1,5 +1,6 @@
 ## Conditional.sql
-CASE
+Learning how to use conditional expression: CASE, COALESCE, IFNULL, NULLIF, and IN
+
 ## Covid19.sql
 
 ### Data on COVID-19 (coronavirus) by _Our World in Data
