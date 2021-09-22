@@ -1,4 +1,8 @@
------- Store Procedure: average number of cars and children by salary
+/*******************************************************************/
+------ Store Procedure
+-- 1. Executing Store Procedures
+-- 2. Dropping Store Procedures
+/*******************************************************************/
 Use XAdventureWorks
 Go
 IF OBJECT_ID('incomerelation', 'P') IS NOT NULL
@@ -16,10 +20,12 @@ BEGIN
 	ORDER BY YearlyIncome DESC
 END
 
-EXECUTE incomerelation;
-
+EXECUTE incomerelation
+/*******************************************************************/
 ------ Store Procedure with Parameters
---1. parameter can be null
+--1. Executing Procedures with Parameters
+--2. Optional Parameters and Default Values
+/*******************************************************************/
 CREATE OR ALTER PROC incomerelation(
 	@MinSalary AS INT,
 	@MaxSalary AS INT,
@@ -35,11 +41,13 @@ END
 
 EXECUTE incomerelation 60000, 100000, 'Dr.';
 EXECUTE incomerelation 6000,100000,'';
-
+/*******************************************************************/
 ------ Store Procedure with Variables
---1. declearing variables
---2. assigning a value to a variable
---3. referring to a variable in a query
+--1. Declearing variables
+--2. Assigning a value to a variable
+--3. Referring to a variable in a query
+/*******************************************************************/
+-- 1
 USE Movies
 GO
 DECLARE @VARDATE DATETIME
@@ -58,7 +66,7 @@ PRINT 'Number of Director Birthday after 01/01/80 = ' + CAST(@NumEmployee AS VAR
 
 SELECT 'Number of Director Birthday after 01/01/80', @NumEmployee
 
------- Store a data into the select statement
+-- 2
 DECLARE @ID INT
 DECLARE @NAME VARCHAR(MAX)
 DECLARE @DATE DATETIME
@@ -78,7 +86,7 @@ INNER JOIN tblCast AS c
 ON f.FilmID = c.CastFilmID
 WHERE c.CastActorID = @ID
 
------- Store a list of data
+-- Store a list of data
 DECLARE @NAMELIST VARCHAR(MAX)
 SET @NAMELIST = ''
 
@@ -88,17 +96,18 @@ WHERE ActorGender = 'Male'
 
 PRINT @NAMELIST
 
------- Global variables
+-- Global variables
 SELECT @@SERVERNAME
 SELECT @@VERSION
 SELECT * FROM tblActor
 SELECT @@ROWCOUNT
-
+/*******************************************************************/
 ------ Output Parameters & Return Values
 --1. Input parameters
 --2. Output parameters
 --3. Result of an Output parameters
 --4. Return values in stored procedures
+/*******************************************************************/
 USE Movies
 GO
 CREATE OR ALTER PROC filmsyear(@YEAR INT)
@@ -138,11 +147,12 @@ SELECT @Count AS 'Number of films', @Names AS 'List of Films'
 DECLARE @Count INT
 EXEC @Count = filmsyear @YEAR = 2000
 SELECT @Count AS 'Number of films', @Names AS 'List of Films'
-
+/*******************************************************************/
 ------ If Statement
 --1. IS ELSE
 --2. Nesting IF
 --3. If statement in Store Procedure
+/*******************************************************************/
 USE Movies
 GO
 --1 & 2
@@ -190,129 +200,6 @@ END
 EXEC ifvariable 'ALL'
 EXEC ifvariable 'se'
 
------- While Loop
---1. SELECT statement in a loop
---2. Ending a loop prematurely
---3. Endless loops
---4. Looping with Cursors(print a list of data)
-
--- 1 & 2
-DECLARE @Counter INT
-DECLARE @MaxOscars INT
-DECLARE @NumFilms INT
-
-SET @Counter = 1
-SET @MaxOscars = (SELECT MAX(FilmOscarWins) FROM tblFilm)
-
-WHILE @Counter <= @MaxOscars
-	BEGIN
-		SET @NumFilms = (SELECT COUNT(*) FROM tblFilm WHERE FilmOscarWins = @Counter) 
-		
-		IF @NumFilms = 0 BREAK
-
-		PRINT CAST(@NumFilms AS VARCHAR(3)) + ' films have won ' + CAST(@Counter AS VARCHAR(3)) + ' Oscars'
-		SET @Counter = @Counter + 1
-	END
-
---3
-DECLARE @Counter INT
-DECLARE @MaxOscars INT
-DECLARE @NumFilms INT
-
-SET @Counter = 0
-SET @MaxOscars = (SELECT MAX(FilmOscarWins) FROM tblFilm)
-
-WHILE @Counter <= @MaxOscars
-	BEGIN
-		SET @NumFilms = (SELECT COUNT(*) FROM tblFilm WHERE FilmOscarWins = @Counter) 
-		PRINT CAST(@NumFilms AS VARCHAR(3)) + ' films have won ' + CAST(@Counter AS VARCHAR(3)) + ' Oscars'
-	END
-
---4
-DECLARE @FilmID INT
-DECLARE @FilmName VARCHAR(MAX)
-DECLARE FilmCursor CURSOR FOR SELECT FilmID, FilmName FROM tblFilm
-OPEN FilmCursor
-FETCH NEXT FROM FilmCursor INTO @FilmID, @FilmName
-WHILE @@FETCH_STATUS = 0
-	BEGIN
-		PRINT 'Characters in the film ' + @Filmname
-		SELECT CastCharacterName FROM tblCast WHERE CastFilmID = @FilmID
-		FETCH NEXT FROM FilmCursor INTO @FilmID, @FilmName
-	END
-CLOSE FilmCursor
-DEALLOCATE FilmCursor
-
------- User Defined Functions
---1. Defined a Function
---2. Adding code to a Function
---3. Altering Functions
---4. Using Variables
---5. Using Conditional statements and Returning different answers
--- 1 & 2
-SELECT FilmName, 
-		FilmReleaseDate,
-		DATENAME(DW, FilmReleaseDate) + ' ' +
-		DATENAME(M, FilmReleaseDate) + ' ' +
-		DATENAME(D, FilmReleaseDate) + ' ' +
-		DATENAME(YY, FilmReleaseDate) + ' '
-FROM tblFilm
-
-CREATE FUNCTION fnlongDate ( @pramDate AS DATETIME )
-RETURNS VARCHAR(MAX)
-AS 
-BEGIN
-	RETURN  DATENAME(DW, @pramDate) + ' ' +
-			DATENAME(M, @pramDate) + ' ' +
-			DATENAME(D, @pramDate) + ' ' +
-			DATENAME(YY, @pramDate) + ' '
-END
-
-SELECT FilmName, 
-		FilmReleaseDate,
-		dbo.fnlongDate(FilmReleaseDate)
-FROM tblFilm
--- 3
-ALTER FUNCTION fnlongDate ( @pramDate AS DATETIME )
-RETURNS VARCHAR(MAX)
-AS 
-BEGIN
-	RETURN  DATENAME(DW, @pramDate) + ' ' +
-			DATENAME(M, @pramDate) + ' ' +
-			DATENAME(D, @pramDate) + 
-			CASE WHEN DAY(@pramDate) IN (1,21,31) THEN 'st'
-				 WHEN DAY(@pramDate) IN (2,22) THEN 'nd'
-				 WHEN DAY(@pramDate) IN (3,23) THEN 'rd'
-				 ELSE 'th'
-			END + ', ' + 
-			DATENAME(YY, @pramDate) + ' '
-END
-SELECT FilmName, 
-		FilmReleaseDate,
-		dbo.fnlongDate(FilmReleaseDate)
-FROM tblFilm
-
--- 4 & 5
-SELECT ActorName, LEFT(ActorName,CHARINDEX(' ',ActorName)-1)
-FROM tblActor
-
-CREATE OR ALTER FUNCTION fnFirstName (@pramName VARCHAR(MAX))
-RETURNS VARCHAR(MAX)
-AS
-BEGIN
-	DECLARE @SpacePosition AS INT
-	DECLARE @Answer AS VARCHAR(MAX)
-	SET @SpacePosition = CHARINDEX(' ',@pramName)
-	IF @SpacePosition = 0
-		SET @Answer = @pramName
-	ELSE
-		SET @Answer = LEFT(@pramName, @SpacePosition-1)
-	
-	RETURN @Answer
-END
-
-SELECT ActorName, dbo.fnFirstName(ActorName)
-FROM tblActor
 
 
 
