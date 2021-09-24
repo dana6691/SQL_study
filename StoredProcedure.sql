@@ -1,7 +1,7 @@
 /*******************************************************************/
 ------ Store Procedure
--- 1. Executing Store Procedures
--- 2. Dropping Store Procedures
+--1. Executing Store Procedures
+--2. Dropping Store Procedures
 /*******************************************************************/
 Use XAdventureWorks
 Go
@@ -147,120 +147,7 @@ SELECT @Count AS 'Number of films', @Names AS 'List of Films'
 DECLARE @Count INT
 EXEC @Count = filmsyear @YEAR = 2000
 SELECT @Count AS 'Number of films', @Names AS 'List of Films'
-/*******************************************************************/
------- If Statement
---1. IS ELSE
---2. Nesting IF
---3. If statement in Store Procedure
-/*******************************************************************/
-USE Movies
-GO
---1 & 2
-DECLARE @DramaFilms INT
-DECLARE @ActionFilms INT
-
-SET @DramaFilms = (SELECT COUNT(*) FROM tblFilm WHERE FilmGenreID = 2)
-SET @ActionFilms = (SELECT COUNT(*) FROM tblFilm WHERE FilmGenreID = 1)
-
-IF @DramaFilms > 5
-	BEGIN
-		PRINT 'WARNING!'
-		PRINT 'There are too many drama films in the databse.'
-		IF @ActionFilms > 10
-			BEGIN
-				PRINT 'There are enough action films.'
-			END
-		ELSE
-			BEGIN
-				PRINT 'Not enough action films either'
-			END
-	END
-ELSE
-	BEGIN
-		PRINT 'INFORMATION!'
-		PRINT 'There are no more than 5 drama films in the databse.'
-	END
-
---3
-CREATE OR ALTER PROC ifvariable ( @infotype VARCHAR(9))
-AS
-BEGIN
-	IF @infotype ='ALL'
-		BEGIN
-			(SELECT * FROM tblFilm)
-			RETURN
-		END
-	IF @infotype = 'AWARD'
-		BEGIN
-			(SELECT FilmName, FilmOscarWins, FilmOscarNominations FROM tblFilm)
-			RETURN
-		END
-	SELECT 'You must choose either ALL or AWARD'
-END
-EXEC ifvariable 'ALL'
-EXEC ifvariable 'se'
 
 
 
 
-
-
-
-
-
-
-
---- Basic Transactions
-USE XMovies
-GO
---Adding new record
-INSERT INTO tblFilm (FilmID,FilmName, FilmReleaseDate)
-VALUES(270, 'Iron Man 3', '2013-04-25')
-
---Updating record 
-UPDATE tblFilm
-SET FilmBoxOfficeDollars = 39665950
-WHERE FilmName = 'Iron Man 3'
-
---Deleting record
-DELETE FROM tblFilm 
-WHERE FilmName IN ('Iron Man 3','Hello Man')
-
---Committing & Rolling Back Transaction
-BEGIN TRAN AddRollback
-
-INSERT INTO tblFilm (FilmName, FilmReleaseDate)
-VALUES('Hello Man', '2015-07-12')
-
-
-INSERT INTO tblFilm (FilmID,FilmName, FilmReleaseDate)
-VALUES(271, 'Hello Man', '2015-07-12')
-
-SELECT * FROM tblFilm WHERE FilmName = 'Hello Man'
-ROLLBACK TRAN
-SELECT * FROM tblFilm WHERE FilmName = 'Hello Man'
-
-COMMIT TRAN AddRollback
-
---Committing or Rolling Back With Condition
-USE Movies
-GO
-DECLARE @Ironmen INT
-
-BEGIN TRAN AddIronman3
-
-INSERT INTO tblFilm (FilmID,FilmName, FilmReleaseDate)
-VALUES(270, 'Iron Man 3', '2013-04-25')
-
-SELECT @Ironmen = COUNT(*) FROM tblFilm WHERE FilmName = 'Iron Man 3'
-
-If @Ironmen > 1
-	BEGIN
-		ROLLBACK TRAN AddIronman3
-		PRINT 'Iron Man 3 is already there'
-	END
-ELSE
-	BEGIN
-		COMMIT TRAN AddIronman3
-		PRINT 'Add Iron Man 3'
-	END
