@@ -8,7 +8,7 @@
 - DML/DDL Triggers
 - Pivot
 
-## Conditional.sql
+## Conditional_Expressions.sql
 Learning how to use conditional expression: CASE, COALESCE, IFNULL, NULLIF, and IN
 
 ## Covid19.sql
