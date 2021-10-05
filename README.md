@@ -11,6 +11,9 @@
 ## Conditional_Expressions.sql
 Learning how to use conditional expression: CASE, COALESCE, IFNULL, NULLIF, and IN
 
+## Import_csvfiles.sql
+Learning bulk insert multiple csv files from a folder
+
 ## Covid19.sql
 
 ### Data on COVID-19 (coronavirus) by _Our World in Data
