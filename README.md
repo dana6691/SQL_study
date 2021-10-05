@@ -1,3 +1,13 @@
+## T-SQL
+- Stored Procedure
+- If/While Statement
+- User Defined Function
+- Temporary Tables
+- Cursor
+- Transaction
+- DML/DDL Triggers
+- Pivot
+
 ## Conditional.sql
 Learning how to use conditional expression: CASE, COALESCE, IFNULL, NULLIF, and IN
 
