@@ -57,3 +57,31 @@ SELECT
 FROM CTE_2 
 LEFT JOIN CTE_4
 ON CTE_2.[submission_date] = CTE_4.[submission_date];
+
+
+-- Solution 1
+SELECT
+    datepart(month,record_date) AS month,
+    MAX(case when data_type = 'max' then data_value else null end) AS max_value,
+    
+    MIN(case when data_type = 'min' then data_value else null end) AS min_value,
+    
+    round(AVG(case when data_type = 'avg' then CAST(data_value as FLOAT) else null end),0) as avg_value
+    
+from temperature_records
+group by datepart(month,record_date);
+
+
+-- Solution 2
+WITH cte_1 as(
+select emp_id
+  ,timestamp
+  ,datediff(MINUTE,lag(timestamp) over(partition by emp_id,day(timestamp) order by emp_id,timestamp),timestamp)/60 as weekendhours
+from weekend
+where DATENAME(WEEKDAY, timestamp) in ('saturday','sunday')
+)
+select emp_id, sum(weekendhours) weekendhours 
+from cte_1
+group by emp_id
+order by weekendhours desc
+
